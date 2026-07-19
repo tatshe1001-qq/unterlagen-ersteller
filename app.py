@@ -186,7 +186,7 @@ def convert_to_pdf(target_root):
                         pres.Close()
         powerpoint.Quit()
     except Exception as e:
-        st.warning(f"⚠️ PDF-Konvertierung über PowerPoint fehlgeschlagen: {e}. Die PowerPoint-Dateien (.pptx) wurden trotzdem generiert.")
+        st.warning(f"⚠️ PDF-Konvertierung über PowerPoint fehlgeschlagen: {e}. Die PowerPoint-Dateien (.pptx) wurden trotzdem generiert. Hinweis: Auf Cloud-Servern ohne Windows/Office schlägt dieser Teilschritt systembedingt fehl.")
 
 # --- EXECUTION BUTTON ---
 st.subheader("🚀 3. Prozess starten")
@@ -204,11 +204,11 @@ else:
         status_text = st.empty()
         
         try:
-            # Temporären Cache-Ordner für Medien anlegen, die python-pptx via Pfad lesen muss
+            # Temporären Cache-Ordner für Medien anlegen
             tmp_dir = os.path.join(os.getcwd(), "tmp_generator_cache")
             os.makedirs(tmp_dir, exist_ok=True)
             
-            # Speicher Logo & PDFs temporär im Cache ab
+            # Speicher Medien temporär ab
             tmp_logo_path = os.path.join(tmp_dir, "logo.png")
             tmp_pdf_mathe = os.path.join(tmp_dir, "mathe.pdf")
             tmp_pdf_wiwi = os.path.join(tmp_dir, "wiwi.pdf")
@@ -276,7 +276,7 @@ else:
                 progress_bar.progress(int((current_tb / total_tb) * 75))
 
             # --- PDF-KONVERTIERUNG ---
-            status_text.text("⏳ Konvertiere PowerPoint-Folien via Office-Schnittstelle in PDFs...")
+            status_text.text("⏳ Konvertiere PowerPoint-Folien in PDFs...")
             convert_to_pdf(output_root_input)
             progress_bar.progress(90)
             
@@ -286,12 +286,10 @@ else:
                 tb_path = os.path.join(output_root_input, tb_name)
                 if not os.path.isdir(tb_path): continue
                 
-                # Bestimme Quelle
                 if tb_name == "Mathematik": src_pdf = tmp_pdf_mathe
                 elif tb_name == "Wirtschaftswissenschaften": src_pdf = tmp_pdf_wiwi
                 else: src_pdf = tmp_pdf_allg
                 
-                # Zieldateiname ableiten
                 orig_name = uploaded_info_mathe.name if tb_name == "Mathematik" else (uploaded_info_wiwi.name if tb_name == "Wirtschaftswissenschaften" else uploaded_info_allg.name)
 
                 for prof in os.listdir(tb_path):
