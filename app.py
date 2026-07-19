@@ -26,7 +26,6 @@ sowie die PowerPoint-Präsentationen für die Hörsäle und konvertiert diese di
 st.divider()
 
 # --- INTEGRIERTE HTML-VORLAGEN ---
-# Standard-Vorlage (Leere_RLB.html)
 HTML_TEMPLATE_DEFAULT = """<!DOCTYPE html>
 <html lang="de">
 <head>
@@ -34,7 +33,6 @@ HTML_TEMPLATE_DEFAULT = """<!DOCTYPE html>
     <title>Rücklaufbogen</title>
 </head>
 <body>
-    <!-- Integrierte Standard-Vorlage -->
     <form>
         <input type="hidden" id="semester" value="semester">
         <input type="hidden" id="titel" value="titel">
@@ -46,7 +44,6 @@ HTML_TEMPLATE_DEFAULT = """<!DOCTYPE html>
 </body>
 </html>"""
 
-# FSR-Vorlage (Leere_FSR_RLB.html)
 HTML_TEMPLATE_FSR = """<!DOCTYPE html>
 <html lang="de">
 <head>
@@ -54,7 +51,6 @@ HTML_TEMPLATE_FSR = """<!DOCTYPE html>
     <title>FSR Rücklaufbogen</title>
 </head>
 <body>
-    <!-- Integrierte FSR-Vorlage (Mathe/WiWi) -->
     <form>
         <input type="hidden" id="semester" value="semester">
         <input type="hidden" id="titel" value="titel">
@@ -66,6 +62,11 @@ HTML_TEMPLATE_FSR = """<!DOCTYPE html>
 </body>
 </html>"""
 
+# --- AUTOMATISCHE ERMITTLUNG DES LOKALEN DOWNLOAD-ORDNERS ---
+# Ermittelt dynamisch das Benutzerverzeichnis (Home) und hängt "Downloads" an
+LOCAL_DOWNLOADS_DIR = str(os.path.join(Path.home(), "Downloads"))
+DEFAULT_LVE_OUTPUT = os.path.join(LOCAL_DOWNLOADS_DIR, "lve_online")
+
 # --- KONFIGURATION & USER-PFADE ---
 st.subheader("⚙️ 1. Basiseinstellungen")
 col_config1, col_config2 = st.columns(2)
@@ -74,8 +75,8 @@ with col_config1:
     semester_input = st.text_input("Aktuelles Semester (für die Folien):", value="Sommersemester 2026")
 
 with col_config2:
-    default_output = os.path.join(os.getcwd(), "lve_online")
-    output_root_input = st.text_input("Ausgabe-Verzeichnis (Wo soll die Struktur entstehen?):", value=default_output)
+    # Setzt nun als Standard den lokalen Downloads-Ordner des Nutzers
+    output_root_input = st.text_input("Ausgabe-Verzeichnis (Wo soll die Struktur entstehen?):", value=DEFAULT_LVE_OUTPUT)
 
 st.divider()
 
@@ -291,7 +292,7 @@ else:
 
                         file_base = f"{nachname_clean}_{kennung_clean}_{titel_gekürzt}{v_art_suffix}"
                         
-                        # --- HTML / RLB ERSTELLUNG (Nutzt die integrierten Code-Strings) ---
+                        # --- HTML / RLB ERSTELLUNG ---
                         html_path = os.path.join(prof_folder, f"{nachname_clean}_RLB_{kennung_clean}_{titel_gekürzt}{v_art_suffix}.html")
                         selected_html_string = HTML_TEMPLATE_FSR if tb in ["Mathematik", "Wirtschaftswissenschaften"] else HTML_TEMPLATE_DEFAULT
                         process_html_template(selected_html_string, html_path, match, v_art_str)
