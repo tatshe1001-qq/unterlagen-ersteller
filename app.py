@@ -25,6 +25,47 @@ sowie die PowerPoint-Präsentationen für die Hörsäle und konvertiert diese di
 
 st.divider()
 
+# --- INTEGRIERTE HTML-VORLAGEN ---
+# Standard-Vorlage (Leere_RLB.html)
+HTML_TEMPLATE_DEFAULT = """<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Rücklaufbogen</title>
+</head>
+<body>
+    <!-- Integrierte Standard-Vorlage -->
+    <form>
+        <input type="hidden" id="semester" value="semester">
+        <input type="hidden" id="titel" value="titel">
+        <input type="hidden" id="kennung" value="kennung">
+        <input type="hidden" id="dozent" value="dozent">
+        <input type="hidden" id="dateiname_RLB" value="dateiname_RLB">
+    </form>
+    <p>Rücklaufbogen für Lehrveranstaltungsevaluation aktiv.</p>
+</body>
+</html>"""
+
+# FSR-Vorlage (Leere_FSR_RLB.html)
+HTML_TEMPLATE_FSR = """<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>FSR Rücklaufbogen</title>
+</head>
+<body>
+    <!-- Integrierte FSR-Vorlage (Mathe/WiWi) -->
+    <form>
+        <input type="hidden" id="semester" value="semester">
+        <input type="hidden" id="titel" value="titel">
+        <input type="hidden" id="kennung" value="kennung">
+        <input type="hidden" id="dozent" value="dozent">
+        <input type="hidden" id="dateiname_RLB" value="dateiname_RLB">
+    </form>
+    <p>FSR Rücklaufbogen aktiv.</p>
+</body>
+</html>"""
+
 # --- KONFIGURATION & USER-PFADE ---
 st.subheader("⚙️ 1. Basiseinstellungen")
 col_config1, col_config2 = st.columns(2)
@@ -33,7 +74,6 @@ with col_config1:
     semester_input = st.text_input("Aktuelles Semester (für die Folien):", value="Sommersemester 2026")
 
 with col_config2:
-    # Standardmäßig wird der Ordner dort erstellt, wo das Skript läuft
     default_output = os.path.join(os.getcwd(), "lve_online")
     output_root_input = st.text_input("Ausgabe-Verzeichnis (Wo soll die Struktur entstehen?):", value=default_output)
 
@@ -41,7 +81,7 @@ st.divider()
 
 # --- DYNAMISCHER DATEN-UPLOAD BEREICH ---
 st.subheader("📂 2. Benötigte Dokumente & Vorlagen hochladen")
-st.info("Lade hier alle Dateien flexibel hoch – unabhängig davon, wo sie auf deinem PC gespeichert sind.")
+st.info("💡 Die HTML-Vorlagen sind bereits fest integriert. Du musst nur noch deine Daten und Infoblätter hochladen.")
 
 up_col1, up_col2 = st.columns(2)
 
@@ -49,10 +89,6 @@ with up_col1:
     st.markdown("### 📄 Basisdaten & Struktur")
     uploaded_json = st.file_uploader("Strukturdatei hochladen (z.B. kombiniert_mit_losungen.json)", type=["json"])
     uploaded_logo = st.file_uploader("Universitäts-Logo hochladen (PNG)", type=["png"])
-    
-    st.markdown("### 🌐 HTML-Vorlagen (RLB)")
-    uploaded_html_def = st.file_uploader("Standard-HTML Vorlage (z.B. Leere_RLB.html)", type=["html"])
-    uploaded_html_fsr = st.file_uploader("FSR-HTML Vorlage (z.B. Leere_FSR_RLB.html)", type=["html"])
 
 with up_col2:
     st.markdown("### 🗂️ Fakultäts-Infoblätter (PDF)")
@@ -90,9 +126,9 @@ def should_add_suffix(titel, art_str):
     if not art_str: return False
     return art_str.lower() not in titel.lower()
 
-def process_html_template(html_content_bytes, output_path, data, v_art_str):
+def process_html_template(template_content_string, output_path, data, v_art_str):
     try:
-        content = html_content_bytes.decode("utf-8")
+        content = template_content_string
         titel_raw = data.get("lve_titel", "")
         titel_anzeige = f"{titel_raw} ({v_art_str})" if should_add_suffix(titel_raw, v_art_str) else titel_raw
         
@@ -186,18 +222,17 @@ def convert_to_pdf(target_root):
                         pres.Close()
         powerpoint.Quit()
     except Exception as e:
-        st.warning(f"⚠️ PDF-Konvertierung über PowerPoint fehlgeschlagen: {e}. Die PowerPoint-Dateien (.pptx) wurden trotzdem generiert. Hinweis: Auf Cloud-Servern ohne Windows/Office schlägt dieser Teilschritt systembedingt fehl.")
+        st.warning(f"⚠️ PDF-Konvertierung über PowerPoint fehlgeschlagen: {e}. Die PowerPoint-Dateien (.pptx) wurden trotzdem generiert. Hinweis: Auf Linux/Cloud-Servern schlägt dieser Teilschritt systembedingt fehl.")
 
 # --- EXECUTION BUTTON ---
 st.subheader("🚀 3. Prozess starten")
 
 all_files_uploaded = all([
-    uploaded_json, uploaded_logo, uploaded_html_def, uploaded_html_fsr,
-    uploaded_info_mathe, uploaded_info_wiwi, uploaded_info_allg
+    uploaded_json, uploaded_logo, uploaded_info_mathe, uploaded_info_wiwi, uploaded_info_allg
 ])
 
 if not all_files_uploaded:
-    st.error("❌ Bitte lade zuerst alle oben geforderten 7 Dateien hoch.")
+    st.error("❌ Bitte lade zuerst alle oben geforderten 5 Dateien hoch.")
 else:
     if st.button("Unterlagen jetzt vollautomatisch generieren", type="primary"):
         progress_bar = st.progress(0)
@@ -219,7 +254,7 @@ else:
             with open(tmp_pdf_wiwi, "wb") as f: f.write(uploaded_info_wiwi.getbuffer())
             with open(tmp_pdf_allg, "wb") as f: f.write(uploaded_info_allg.getbuffer())
             
-            # Ausgabe-Verzeichnis leeren/erstellen
+            # Ausgabe-Verzeichnis erstellen
             os.makedirs(output_root_input, exist_ok=True)
 
             # JSON Daten parsen
@@ -256,10 +291,10 @@ else:
 
                         file_base = f"{nachname_clean}_{kennung_clean}_{titel_gekürzt}{v_art_suffix}"
                         
-                        # --- HTML / RLB ERSTELLUNG ---
+                        # --- HTML / RLB ERSTELLUNG (Nutzt die integrierten Code-Strings) ---
                         html_path = os.path.join(prof_folder, f"{nachname_clean}_RLB_{kennung_clean}_{titel_gekürzt}{v_art_suffix}.html")
-                        raw_html_bytes = uploaded_html_fsr.getvalue() if tb in ["Mathematik", "Wirtschaftswissenschaften"] else uploaded_html_def.getvalue()
-                        process_html_template(raw_html_bytes, html_path, match, v_art_str)
+                        selected_html_string = HTML_TEMPLATE_FSR if tb in ["Mathematik", "Wirtschaftswissenschaften"] else HTML_TEMPLATE_DEFAULT
+                        process_html_template(selected_html_string, html_path, match, v_art_str)
                         
                         # --- QR-CODE GENERIEREN ---
                         qr_temp = os.path.join(prof_folder, f"temp_{kennung_clean}.png")
